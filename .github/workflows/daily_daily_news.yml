@@ -1,15 +1,15 @@
-name: Daily Tech News Bot
+name: Daily Newspaper Bot
 
 on:
-  # 매일 아침 7시 (KST) = 22시 (UTC, 전날) 실행
+  # 매일 오전 11시 (KST) = 2시 (UTC) 실행
   schedule:
-    - cron: '0 22 * * *'
+    - cron: '0 2 * * *'
 
   # 수동 실행 가능
   workflow_dispatch:
 
 jobs:
-  send-news:
+  send-daily-news:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,10 +26,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run news bot
+      - name: Run daily news bot
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
-          python main.py
+          python main_daily.py
