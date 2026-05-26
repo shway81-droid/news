@@ -8,6 +8,13 @@ on:
   # 수동 실행 가능
   workflow_dispatch:
 
+  # monitor 관련 파일 푸시 시에도 실행 (state.json 자기-루프 방지를 위해 paths 필터)
+  push:
+    branches: [main]
+    paths:
+      - 'monitor.py'
+      - '.github/workflows/daily_monitor.yml'
+
 permissions:
   contents: write  # state.json 커밋용
 
