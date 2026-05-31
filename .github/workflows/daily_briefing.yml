@@ -1,0 +1,36 @@
+name: Daily Briefing Bot
+
+on:
+  # 매일 오전 6시 30분 (KST) = 전날 21시 30분 (UTC) 실행
+  # 미국 증시 마감(겨울 06:00 / 여름 05:00 KST) 이후라 전일 종가 확보됨
+  schedule:
+    - cron: '30 21 * * *'
+
+  # 수동 실행 가능
+  workflow_dispatch:
+
+jobs:
+  send-briefing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run briefing bot
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python main_briefing.py
