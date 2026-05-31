@@ -5,6 +5,7 @@
 둘 다 API 키 불필요.
 """
 from typing import Dict, Optional
+from datetime import datetime, timezone, timedelta
 
 import requests
 
@@ -13,6 +14,12 @@ from config import KSKILL_PROXY_BASE_URL
 # 무안군 일로읍 대략 좌표 (위도, 경도)
 LAT, LON = 34.92, 126.43
 LOCATION_NAME = "무안 일로읍"
+
+KST = timezone(timedelta(hours=9))
+
+# 기상청 단기예보 발표시각 (KST, 매일 8회)
+KMA_BASE_TIMES = [(200, "0200"), (500, "0500"), (800, "0800"), (1100, "1100"),
+                  (1400, "1400"), (1700, "1700"), (2000, "2000"), (2300, "2300")]
 
 HEADERS = {"User-Agent": "curl/8.0"}  # wttr.in 은 브라우저 UA 에 HTML 을 줌
 
@@ -36,8 +43,13 @@ def _from_kma() -> Optional[Dict]:
     if not base:
         return None
     url = f"{base}/v1/korea-weather/forecast"
+    base_date, base_time = _kma_base_kst()
     try:
-        resp = requests.get(url, params={"lat": LAT, "lon": LON}, timeout=15)
+        resp = requests.get(
+            url,
+            params={"lat": LAT, "lon": LON, "baseDate": base_date, "baseTime": base_time},
+            timeout=15,
+        )
         resp.raise_for_status()
         items = resp.json()["response"]["body"]["items"]["item"]
         if not items:
@@ -93,12 +105,31 @@ def _from_kma() -> Optional[Dict]:
             "am": _period_summary(hourly_desc, *AM_WINDOW),
             "pm": _period_summary(hourly_desc, *PM_WINDOW),
         }
-        print(f"✅ 날씨(기상청): {weather['desc']} {temp}℃, "
-              f"{weather['min']}~{weather['max']}℃, 강수 {pop_today}%")
+        print(f"✅ 날씨(기상청 {base_date} {base_time}): {weather['desc']} {temp}℃, "
+              f"{weather['min']}~{weather['max']}℃, 강수 {pop_today}%, "
+              f"오전={weather['am']}, 오후={weather['pm']}")
         return weather
     except Exception as e:
         print(f"⚠️ 기상청 날씨 실패, wttr.in 폴백: {e}")
         return None
+
+
+def _kma_base_kst() -> tuple:
+    """KST 기준 최신 단기예보 발표시각 (baseDate, baseTime) 계산.
+
+    프록시/서버 시계(UTC)에 의존하지 않도록 직접 KST 로 계산한다.
+    발표 후 데이터 준비 지연을 고려해 15분 버퍼를 둔다.
+    """
+    ref = datetime.now(KST) - timedelta(minutes=15)
+    hm = ref.hour * 100 + ref.minute
+    chosen = None
+    for value, label in KMA_BASE_TIMES:
+        if value <= hm:
+            chosen = label
+    if chosen is None:  # 02:15 이전 → 전날 2300 발표분
+        prev = ref - timedelta(days=1)
+        return prev.strftime("%Y%m%d"), "2300"
+    return ref.strftime("%Y%m%d"), chosen
 
 
 def _from_wttr() -> Optional[Dict]:
