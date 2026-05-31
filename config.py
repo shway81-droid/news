@@ -8,6 +8,12 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 # Groq API 설정 (무료)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
+# k-skill 프록시 (기상청 날씨 / 네이버 뉴스 — 별도 API 키 불필요)
+KSKILL_PROXY_BASE_URL = os.getenv("KSKILL_PROXY_BASE_URL", "https://k-skill-proxy.nomadamas.org")
+
+# 아침 브리핑 주요뉴스 보강용 네이버 뉴스 검색어 (최신순)
+NAVER_NEWS_QUERIES = ["속보", "경제", "정치"]
+
 # RSS 피드 목록
 RSS_FEEDS = [
     # AI 뉴스 (국내)

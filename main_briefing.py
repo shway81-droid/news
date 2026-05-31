@@ -8,6 +8,7 @@ import sys
 from stock_fetcher import fetch_indices
 from weather_fetcher import fetch_weather
 from rss_fetcher import fetch_all_feeds
+from naver_news import fetch_top_news
 from news_ranker import summarize_top_news
 from telegram_sender import send_briefing_to_telegram
 
@@ -26,10 +27,12 @@ def main():
     print("\n🌤 Step 2: 날씨 수집 중...")
     weather = fetch_weather()
 
-    # Step 3: 주요 뉴스 TOP 3
+    # Step 3: 주요 뉴스 TOP 3 (네이버 일반뉴스 + RSS 후보 풀 → Groq 선별)
     print("\n📰 Step 3: 주요 뉴스 수집·요약 중...")
-    all_news = fetch_all_feeds()
-    top_news = summarize_top_news(all_news, count=3) if all_news else []
+    naver_news = fetch_top_news()
+    rss_news = fetch_all_feeds()
+    news_pool = naver_news + rss_news
+    top_news = summarize_top_news(news_pool, count=3) if news_pool else []
 
     # 모든 정보 수집 실패 시에만 종료
     if not stocks and not weather and not top_news:
