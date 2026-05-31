@@ -28,7 +28,8 @@ python main_briefing.py
 python rss_fetcher.py      # RSS 수집 테스트
 python naver_crawler.py    # 네이버 크롤링 테스트
 python stock_fetcher.py    # 주가지수 수집 테스트
-python weather_fetcher.py  # 날씨 수집 테스트
+python weather_fetcher.py  # 날씨 수집 테스트 (기상청 프록시)
+python naver_news.py       # 네이버 뉴스 검색 테스트 (프록시)
 python telegram_sender.py  # 텔레그램 메시지 포맷 테스트
 ```
 
@@ -68,15 +69,18 @@ RSS 피드 → rss_fetcher.py → news_ranker.py (Groq AI) → telegram_sender.p
 
 ### 4. 아침 브리핑 봇 (`main_briefing.py`)
 ```
-stock_fetcher.py (Stooq/Yahoo) ┐
-weather_fetcher.py (wttr.in)   ├→ telegram_sender.py (한 메시지로 묶음)
-rss_fetcher.py → news_ranker.py (Groq AI, TOP3) ┘
+stock_fetcher.py (Stooq/Yahoo)              ┐
+weather_fetcher.py (기상청 프록시→wttr.in)   ├→ telegram_sender.py (한 메시지로 묶음)
+naver_news.py + rss_fetcher.py → news_ranker.py (Groq AI, TOP3) ┘
 ```
 - 미국 증시(나스닥·S&P500) 전일 종가 및 등락 — API 키 불필요
-- 무안군 일로읍 날씨(wttr.in) — API 키 불필요
-- 주요 뉴스 TOP3 — 기존 RSS + Groq 요약 재사용 (`summarize_top_news()`)
+- 무안군 일로읍 날씨 — 기상청 단기예보(k-skill 프록시) 우선, 실패 시 wttr.in 폴백. API 키 불필요
+- 주요 뉴스 TOP3 — 네이버 뉴스(프록시) + 기존 RSS 후보 풀을 Groq로 선별/요약 (`summarize_top_news()`)
 - 세 정보를 하나의 텔레그램 메시지로 묶어 매일 06:30 KST 전송
 - 일부 항목 수집에 실패해도 나머지는 전송 (부분 실패 허용)
+
+> k-skill 프록시(`KSKILL_PROXY_BASE_URL`, 기본 `https://k-skill-proxy.nomadamas.org`)는
+> 기상청·네이버 뉴스 OpenAPI를 대신 호출해주므로 개별 API 키 발급이 필요 없다.
 
 ## 주요 모듈
 
@@ -86,7 +90,8 @@ rss_fetcher.py → news_ranker.py (Groq AI, TOP3) ┘
 | `rss_fetcher.py` | RSS 파싱 및 시간 필터링 (`fetch_all_feeds()`) |
 | `naver_crawler.py` | 네이버 언론사별 헤드라인 크롤링 (`fetch_economy_headlines()`, `fetch_daily_headlines()`) |
 | `stock_fetcher.py` | 주가지수 수집 (`fetch_indices()`) — Stooq, Yahoo 폴백 |
-| `weather_fetcher.py` | 무안 일로읍 날씨 수집 (`fetch_weather()`) — wttr.in |
+| `weather_fetcher.py` | 무안 일로읍 날씨 수집 (`fetch_weather()`) — 기상청 프록시 우선, wttr.in 폴백 |
+| `naver_news.py` | 네이버 뉴스 검색 (`fetch_top_news()`) — k-skill 프록시, 키 불필요 |
 | `news_ranker.py` | Groq API로 뉴스 선별/요약 (`rank_and_summarize_news()`, `summarize_top_news()`) |
 | `telegram_sender.py` | 텔레그램 메시지 포맷팅 및 전송 (`send_news_to_telegram()`, `send_economy_only_to_telegram()`, `send_daily_only_to_telegram()`, `send_briefing_to_telegram()`) |
 

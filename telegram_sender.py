@@ -431,11 +431,24 @@ def format_briefing_message(stocks: List[Dict], weather: Dict, news: List[Dict])
         loc = escape_html(weather["location"])
         desc = escape_html(weather["desc"])
         lines.append(f"📍 {loc} · {desc}")
+        feels = weather.get("feels", "")
+        feels_str = f" (체감 {feels}℃)" if feels else ""
         lines.append(
-            f"🌡 {weather['temp']}℃ (체감 {weather['feels']}℃) · "
+            f"🌡 {weather['temp']}℃{feels_str} · "
             f"최저 {weather['min']}℃ / 최고 {weather['max']}℃"
         )
-        lines.append(f"💧 습도 {weather['humidity']}% · ☔ 강수확률 {weather['rain_chance']}%")
+
+        am, pm = weather.get("am"), weather.get("pm")
+        if am:
+            lines.append(f"🌅 오전 {escape_html(am['desc'])} · 강수 {am['pop']}%")
+        if pm:
+            lines.append(f"🌇 오후 {escape_html(pm['desc'])} · 강수 {pm['pop']}%")
+
+        # 오전/오후 요약이 없을 때만 일 단위 강수확률 표시 (중복 방지)
+        if am or pm:
+            lines.append(f"💧 습도 {weather['humidity']}%")
+        else:
+            lines.append(f"💧 습도 {weather['humidity']}% · ☔ 강수확률 {weather['rain_chance']}%")
     else:
         lines.append("(날씨를 불러오지 못했습니다)")
 
