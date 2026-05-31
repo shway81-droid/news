@@ -17,10 +17,6 @@ LOCATION_NAME = "무안 일로읍"
 
 KST = timezone(timedelta(hours=9))
 
-# 기상청 단기예보 발표시각 (KST, 매일 8회)
-KMA_BASE_TIMES = [(200, "0200"), (500, "0500"), (800, "0800"), (1100, "1100"),
-                  (1400, "1400"), (1700, "1700"), (2000, "2000"), (2300, "2300")]
-
 HEADERS = {"User-Agent": "curl/8.0"}  # wttr.in 은 브라우저 UA 에 HTML 을 줌
 
 # 기상청 코드 → 한글
@@ -115,21 +111,20 @@ def _from_kma() -> Optional[Dict]:
 
 
 def _kma_base_kst() -> tuple:
-    """KST 기준 최신 단기예보 발표시각 (baseDate, baseTime) 계산.
+    """오늘 하루 전체 예보가 포함되도록 '오늘 아침 발표분'을 고정 사용.
 
-    프록시/서버 시계(UTC)에 의존하지 않도록 직접 KST 로 계산한다.
-    발표 후 데이터 준비 지연을 고려해 15분 버퍼를 둔다.
+    기상청 단기예보는 발표시각 이후 시간대만 제공하므로, '최신 발표분'을 쓰면
+    낮/저녁에 실행할 때 오늘 오전·오후가 누락된다. 실행 시각과 무관하게 오늘의
+    아침 발표분(0500)을 고정해 오늘 0600~ 전체(오전·오후·최저/최고)를 받는다.
     """
-    ref = datetime.now(KST) - timedelta(minutes=15)
+    ref = datetime.now(KST)
     hm = ref.hour * 100 + ref.minute
-    chosen = None
-    for value, label in KMA_BASE_TIMES:
-        if value <= hm:
-            chosen = label
-    if chosen is None:  # 02:15 이전 → 전날 2300 발표분
-        prev = ref - timedelta(days=1)
-        return prev.strftime("%Y%m%d"), "2300"
-    return ref.strftime("%Y%m%d"), chosen
+    if hm >= 510:   # 05:10 이후 → 오늘 0500 발표분
+        return ref.strftime("%Y%m%d"), "0500"
+    if hm >= 210:   # 02:10~05:10 → 오늘 0200 발표분
+        return ref.strftime("%Y%m%d"), "0200"
+    prev = ref - timedelta(days=1)   # 02:10 이전 → 전날 2300 발표분
+    return prev.strftime("%Y%m%d"), "2300"
 
 
 def _from_wttr() -> Optional[Dict]:
