@@ -21,9 +21,14 @@ python main_economy.py
 # 일간지 뉴스봇 실행 (네이버 일간지 10개 크롤링)
 python main_daily.py
 
+# 아침 브리핑 봇 실행 (미국 증시 + 무안 일로읍 날씨 + 주요뉴스 TOP3)
+python main_briefing.py
+
 # 개별 모듈 테스트
 python rss_fetcher.py      # RSS 수집 테스트
 python naver_crawler.py    # 네이버 크롤링 테스트
+python stock_fetcher.py    # 주가지수 수집 테스트
+python weather_fetcher.py  # 날씨 수집 테스트
 python telegram_sender.py  # 텔레그램 메시지 포맷 테스트
 ```
 
@@ -37,7 +42,7 @@ export GROQ_API_KEY="your_groq_api_key"  # 무료 API
 
 ## 아키텍처
 
-세 개의 독립적인 뉴스봇:
+네 개의 독립적인 봇 (뉴스봇 3 + 아침 브리핑 1):
 
 ### 1. 테크 뉴스봇 (`main.py`)
 ```
@@ -61,6 +66,18 @@ RSS 피드 → rss_fetcher.py → news_ranker.py (Groq AI) → telegram_sender.p
 - 네이버 일간지 페이지에서 헤드라인 크롤링
 - 주요 일간지 10개 각각 최신 기사 1개씩 수집
 
+### 4. 아침 브리핑 봇 (`main_briefing.py`)
+```
+stock_fetcher.py (Stooq/Yahoo) ┐
+weather_fetcher.py (wttr.in)   ├→ telegram_sender.py (한 메시지로 묶음)
+rss_fetcher.py → news_ranker.py (Groq AI, TOP3) ┘
+```
+- 미국 증시(나스닥·S&P500) 전일 종가 및 등락 — API 키 불필요
+- 무안군 일로읍 날씨(wttr.in) — API 키 불필요
+- 주요 뉴스 TOP3 — 기존 RSS + Groq 요약 재사용 (`summarize_top_news()`)
+- 세 정보를 하나의 텔레그램 메시지로 묶어 매일 06:30 KST 전송
+- 일부 항목 수집에 실패해도 나머지는 전송 (부분 실패 허용)
+
 ## 주요 모듈
 
 | 파일 | 역할 |
@@ -68,8 +85,10 @@ RSS 피드 → rss_fetcher.py → news_ranker.py (Groq AI) → telegram_sender.p
 | `config.py` | RSS 피드 목록, 환경변수, 설정값 (`NEWS_COUNT`, `HOURS_LIMIT`) |
 | `rss_fetcher.py` | RSS 파싱 및 시간 필터링 (`fetch_all_feeds()`) |
 | `naver_crawler.py` | 네이버 언론사별 헤드라인 크롤링 (`fetch_economy_headlines()`, `fetch_daily_headlines()`) |
-| `news_ranker.py` | Groq API로 뉴스 선별/요약 (`rank_and_summarize_news()`) |
-| `telegram_sender.py` | 텔레그램 메시지 포맷팅 및 전송 (`send_news_to_telegram()`, `send_economy_only_to_telegram()`, `send_daily_only_to_telegram()`) |
+| `stock_fetcher.py` | 주가지수 수집 (`fetch_indices()`) — Stooq, Yahoo 폴백 |
+| `weather_fetcher.py` | 무안 일로읍 날씨 수집 (`fetch_weather()`) — wttr.in |
+| `news_ranker.py` | Groq API로 뉴스 선별/요약 (`rank_and_summarize_news()`, `summarize_top_news()`) |
+| `telegram_sender.py` | 텔레그램 메시지 포맷팅 및 전송 (`send_news_to_telegram()`, `send_economy_only_to_telegram()`, `send_daily_only_to_telegram()`, `send_briefing_to_telegram()`) |
 
 ## RSS 피드 추가 방법
 

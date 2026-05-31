@@ -40,6 +40,86 @@ def rank_and_summarize_news(news_list: List[Dict]) -> List[Dict]:
     return final_news[:NEWS_COUNT]
 
 
+def summarize_top_news(news_list: List[Dict], count: int = 3) -> List[Dict]:
+    """브리핑용: 가장 중요한 뉴스 count개를 선별하고 한줄 요약 (Groq)"""
+    if not news_list:
+        return []
+
+    # Groq 키가 없으면 최신순 count개로 폴백
+    if not GROQ_API_KEY:
+        print("⚠️ GROQ_API_KEY 없음 — 최신순으로 대체")
+        return [{**n, "ai_summary": n.get("summary", "")[:60]} for n in news_list[:count]]
+
+    news_text = format_news_for_ai(news_list)
+    prompt = f"""아래 뉴스 목록에서 오늘 가장 중요한 뉴스 {count}개를 선별하고 한줄 요약을 작성하세요.
+
+## 뉴스 목록
+{news_text}
+
+## 응답 형식 (정확히 {count}개)
+번호|출처|제목|한줄요약
+
+예시:
+1|AI타임스|오픈AI 새 모델 발표|GPT-5 출시로 성능 대폭 향상
+
+중요: 반드시 위 형식(|로 구분)만 출력하고, 한줄요약은 30자 내외로 작성하세요."""
+
+    try:
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json",
+        }
+        data = {
+            "model": "llama-3.3-70b-versatile",
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 800,
+            "temperature": 0.3,
+        }
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers=headers,
+            json=data,
+            timeout=60,
+        )
+        if response.status_code != 200:
+            print(f"❌ Groq API 오류: {response.status_code}")
+            return [{**n, "ai_summary": n.get("summary", "")[:60]} for n in news_list[:count]]
+
+        response_text = response.json()["choices"][0]["message"]["content"]
+
+        top = []
+        seen_links = set()
+        for line in response_text.strip().split("\n"):
+            line = line.strip()
+            if "|" not in line:
+                continue
+            parts = line.split("|")
+            if len(parts) < 4:
+                continue
+            source, title, summary = parts[1].strip(), parts[2].strip(), parts[3].strip()
+            matched = find_matching_news(title, source, news_list)
+            if matched and matched.get("link") not in seen_links:
+                seen_links.add(matched.get("link"))
+                top.append({**matched, "ai_summary": summary})
+            if len(top) >= count:
+                break
+
+        # 부족하면 최신순으로 채우기
+        for news in news_list:
+            if len(top) >= count:
+                break
+            if news.get("link") not in seen_links:
+                seen_links.add(news.get("link"))
+                top.append({**news, "ai_summary": news.get("summary", "")[:60]})
+
+        print(f"🤖 주요뉴스 {len(top)}개 선별 완료")
+        return top[:count]
+
+    except Exception as e:
+        print(f"❌ 주요뉴스 요약 실패: {e}")
+        return [{**n, "ai_summary": n.get("summary", "")[:60]} for n in news_list[:count]]
+
+
 def select_one_per_source(news_list: List[Dict]) -> List[Dict]:
     """각 출처에서 가장 최신 글 1개씩 선택"""
     selected = {}

@@ -358,6 +358,119 @@ def format_daily_only_message(daily_news: List[Dict]) -> str:
     return "\n".join(lines)
 
 
+def send_briefing_to_telegram(stocks: List[Dict], weather: Dict, news: List[Dict]) -> bool:
+    """텔레그램으로 아침 브리핑 전송"""
+
+    message = format_briefing_message(stocks, weather, news)
+
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("⚠️ 텔레그램 설정이 없습니다. (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)")
+        print("\n--- 메시지 미리보기 ---")
+        print(message)
+        return False
+
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": message,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True
+        }
+
+        response = requests.post(url, json=payload, timeout=30)
+
+        if response.status_code == 200:
+            print("✅ 텔레그램 전송 성공!")
+            return True
+        else:
+            print(f"❌ 텔레그램 전송 실패: {response.status_code}")
+            print(response.text)
+            return False
+
+    except Exception as e:
+        print(f"❌ 텔레그램 전송 오류: {e}")
+        return False
+
+
+def format_briefing_message(stocks: List[Dict], weather: Dict, news: List[Dict]) -> str:
+    """아침 브리핑을 텔레그램 메시지 형식으로 변환"""
+
+    now = datetime.now()
+    weekdays = ["월", "화", "수", "목", "금", "토", "일"]
+    date_str = now.strftime(f"%Y-%m-%d ({weekdays[now.weekday()]})")
+
+    lines = [
+        "☀️ <b>아침 브리핑</b>",
+        f"📅 {date_str}",
+        "",
+        "━━━━━━━━━━━━━━━━━━━━",
+        "📈 <b>미국 증시 (전일 종가)</b>",
+        "━━━━━━━━━━━━━━━━━━━━",
+    ]
+
+    if stocks:
+        for s in stocks:
+            arrow = "🔺" if s["change"] > 0 else ("🔻" if s["change"] < 0 else "➖")
+            name = escape_html(s["name"])
+            lines.append(
+                f"{arrow} <b>{name}</b> {s['close']:,.2f} "
+                f"({s['change']:+,.2f} · {s['change_pct']:+.2f}%)"
+            )
+    else:
+        lines.append("(시세를 불러오지 못했습니다)")
+
+    lines.extend([
+        "",
+        "━━━━━━━━━━━━━━━━━━━━",
+        "🌤 <b>오늘의 날씨</b>",
+        "━━━━━━━━━━━━━━━━━━━━",
+    ])
+
+    if weather:
+        loc = escape_html(weather["location"])
+        desc = escape_html(weather["desc"])
+        lines.append(f"📍 {loc} · {desc}")
+        lines.append(
+            f"🌡 {weather['temp']}℃ (체감 {weather['feels']}℃) · "
+            f"최저 {weather['min']}℃ / 최고 {weather['max']}℃"
+        )
+        lines.append(f"💧 습도 {weather['humidity']}% · ☔ 강수확률 {weather['rain_chance']}%")
+    else:
+        lines.append("(날씨를 불러오지 못했습니다)")
+
+    lines.extend([
+        "",
+        "━━━━━━━━━━━━━━━━━━━━",
+        "📰 <b>주요 뉴스 TOP 3</b>",
+        "━━━━━━━━━━━━━━━━━━━━",
+        "",
+    ])
+
+    num_emojis = ["1️⃣", "2️⃣", "3️⃣"]
+    if news:
+        for i, item in enumerate(news):
+            emoji = num_emojis[i] if i < len(num_emojis) else f"{i+1}."
+            title = escape_html(item.get("title", ""))
+            source = escape_html(item.get("source", ""))
+            link = item.get("link", "")
+            summary = escape_html(item.get("ai_summary", "")[:80])
+
+            lines.append(f"{emoji} <b>[{source}]</b>")
+            lines.append(f"<a href=\"{link}\">{title}</a>")
+            if summary:
+                lines.append(f"   → {summary}")
+            lines.append("")
+    else:
+        lines.append("(뉴스를 불러오지 못했습니다)")
+        lines.append("")
+
+    lines.append("━━━━━━━━━━━━━━━━━━━━")
+    lines.append("🤖 Powered by Groq AI")
+
+    return "\n".join(lines)
+
+
 if __name__ == "__main__":
     # 테스트
     test_news = [
