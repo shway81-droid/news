@@ -76,7 +76,7 @@ naver_news.py + rss_fetcher.py → news_ranker.py (Groq AI, TOP3) ┘
 - 미국 증시(나스닥·S&P500) 전일 종가 및 등락 — API 키 불필요
 - 무안군 일로읍 날씨 — 기상청 단기예보(k-skill 프록시) 우선, 실패 시 wttr.in 폴백. API 키 불필요
 - 주요 뉴스 TOP3 — 네이버 뉴스(프록시) + 기존 RSS 후보 풀을 Groq로 선별/요약 (`summarize_top_news()`)
-- 세 정보를 하나의 텔레그램 메시지로 묶어 매일 06:30 KST 전송
+- 세 정보를 하나의 텔레그램 메시지로 묶어 매일 아침 06:30 KST 전송 (외부 크론이 `workflow_dispatch`로 정시 트리거 — GitHub `schedule`은 1~2시간 지연되어 미사용. 설정은 `docs/BRIEFING_SCHEDULE.md` 참고)
 - 일부 항목 수집에 실패해도 나머지는 전송 (부분 실패 허용)
 
 > k-skill 프록시(`KSKILL_PROXY_BASE_URL`, 기본 `https://k-skill-proxy.nomadamas.org`)는
