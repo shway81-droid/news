@@ -358,10 +358,10 @@ def format_daily_only_message(daily_news: List[Dict]) -> str:
     return "\n".join(lines)
 
 
-def send_briefing_to_telegram(stocks: List[Dict], weather: Dict, news: List[Dict]) -> bool:
+def send_briefing_to_telegram(stocks: List[Dict], news: List[Dict]) -> bool:
     """텔레그램으로 아침 브리핑 전송"""
 
-    message = format_briefing_message(stocks, weather, news)
+    message = format_briefing_message(stocks, news)
 
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("⚠️ 텔레그램 설정이 없습니다. (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)")
@@ -393,7 +393,7 @@ def send_briefing_to_telegram(stocks: List[Dict], weather: Dict, news: List[Dict
         return False
 
 
-def format_briefing_message(stocks: List[Dict], weather: Dict, news: List[Dict]) -> str:
+def format_briefing_message(stocks: List[Dict], news: List[Dict]) -> str:
     """아침 브리핑을 텔레그램 메시지 형식으로 변환"""
 
     now = datetime.now()
@@ -419,38 +419,6 @@ def format_briefing_message(stocks: List[Dict], weather: Dict, news: List[Dict])
             )
     else:
         lines.append("(시세를 불러오지 못했습니다)")
-
-    lines.extend([
-        "",
-        "━━━━━━━━━━━━━━━━━━━━",
-        "🌤 <b>오늘의 날씨</b>",
-        "━━━━━━━━━━━━━━━━━━━━",
-    ])
-
-    if weather:
-        loc = escape_html(weather["location"])
-        desc = escape_html(weather["desc"])
-        lines.append(f"📍 {loc} · {desc}")
-        feels = weather.get("feels", "")
-        feels_str = f" (체감 {feels}℃)" if feels else ""
-        lines.append(
-            f"🌡 {weather['temp']}℃{feels_str} · "
-            f"최저 {weather['min']}℃ / 최고 {weather['max']}℃"
-        )
-
-        am, pm = weather.get("am"), weather.get("pm")
-        if am:
-            lines.append(f"🌅 오전 {escape_html(am['desc'])} · 강수 {am['pop']}%")
-        if pm:
-            lines.append(f"🌇 오후 {escape_html(pm['desc'])} · 강수 {pm['pop']}%")
-
-        # 오전/오후 요약이 없을 때만 일 단위 강수확률 표시 (중복 방지)
-        if am or pm:
-            lines.append(f"💧 습도 {weather['humidity']}%")
-        else:
-            lines.append(f"💧 습도 {weather['humidity']}% · ☔ 강수확률 {weather['rain_chance']}%")
-    else:
-        lines.append("(날씨를 불러오지 못했습니다)")
 
     lines.extend([
         "",
