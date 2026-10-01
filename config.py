@@ -10,7 +10,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 # llama-3.3-70b-versatile은 2026-08-16 종료됨 → Groq 권장 대체 모델
 GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
-# k-skill 프록시 (기상청 날씨 / 네이버 뉴스 — 별도 API 키 불필요)
+# k-skill 프록시 (네이버 뉴스 — 별도 API 키 불필요)
 KSKILL_PROXY_BASE_URL = os.getenv("KSKILL_PROXY_BASE_URL", "https://k-skill-proxy.nomadamas.org")
 
 # 아침 브리핑 주요뉴스 보강용 네이버 뉴스 검색어 (최신순)
