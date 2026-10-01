@@ -23,15 +23,13 @@ RSS_FEEDS = [
     {"name": "IT월드", "url": "https://www.itworld.co.kr/rss"},
     # AI 뉴스 (해외)
     {"name": "OpenAI", "url": "https://openai.com/news/rss.xml"},
-    {"name": "Google Blog", "url": "https://blog.google/feed/"},
+    {"name": "Google AI Blog", "url": "https://blog.google/technology/ai/rss/"},
     # 국내 테크 블로그
     {"name": "네이버 D2", "url": "https://d2.naver.com/d2.atom"},
     {"name": "토스", "url": "https://toss.tech/rss.xml"},
-    {"name": "쿠팡 엔지니어링", "url": "https://medium.com/feed/coupang-engineering"},
     {"name": "데브시스터즈", "url": "https://tech.devsisters.com/rss.xml"},
     # 개발/기술 뉴스
     {"name": "GeekNews", "url": "https://news.hada.io/rss/news"},
-    {"name": "요즘IT", "url": "https://yozm.wishket.com/magazine/feed/"},
     # 개인 블로그
     {"name": "JavaExpert", "url": "https://javaexpert.tistory.com/rss"},
 ]
