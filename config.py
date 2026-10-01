@@ -7,6 +7,8 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 # Groq API 설정 (무료)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+# llama-3.3-70b-versatile은 2026-08-16 종료됨 → Groq 권장 대체 모델
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
 # k-skill 프록시 (기상청 날씨 / 네이버 뉴스 — 별도 API 키 불필요)
 KSKILL_PROXY_BASE_URL = os.getenv("KSKILL_PROXY_BASE_URL", "https://k-skill-proxy.nomadamas.org")

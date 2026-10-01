@@ -50,7 +50,7 @@ export GROQ_API_KEY="your_groq_api_key"  # 무료 API
 RSS 피드 → rss_fetcher.py → news_ranker.py (Groq AI) → telegram_sender.py
 ```
 - 여러 RSS 피드에서 뉴스 수집 (최근 48시간 내, `config.HOURS_LIMIT`)
-- Groq AI(`llama-3.3-70b-versatile`)로 중요도 평가 및 요약
+- Groq AI(`openai/gpt-oss-120b`, `config.GROQ_MODEL`)로 중요도 평가 및 요약
 - 출처별 1개씩 선택 후 AI타임스에서 추가 채움 (총 10개, `config.NEWS_COUNT`)
 
 ### 2. 경제 뉴스봇 (`main_economy.py`)
