@@ -2,7 +2,7 @@
 import requests
 from typing import List, Dict
 
-from config import GROQ_API_KEY, NEWS_COUNT
+from config import GROQ_API_KEY, GROQ_MODEL, NEWS_COUNT
 
 
 def rank_and_summarize_news(news_list: List[Dict]) -> List[Dict]:
@@ -70,9 +70,10 @@ def summarize_top_news(news_list: List[Dict], count: int = 3) -> List[Dict]:
             "Content-Type": "application/json",
         }
         data = {
-            "model": "llama-3.3-70b-versatile",
+            "model": GROQ_MODEL,
+            "reasoning_effort": "low",
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 800,
+            "max_tokens": 1500,
             "temperature": 0.3,
         }
         response = requests.post(
@@ -83,6 +84,7 @@ def summarize_top_news(news_list: List[Dict], count: int = 3) -> List[Dict]:
         )
         if response.status_code != 200:
             print(f"❌ Groq API 오류: {response.status_code}")
+            print(response.text[:300])
             return [{**n, "ai_summary": n.get("summary", "")[:60]} for n in news_list[:count]]
 
         response_text = response.json()["choices"][0]["message"]["content"]
@@ -170,9 +172,10 @@ def select_with_ai(news_list: List[Dict], count: int) -> List[Dict]:
         }
 
         data = {
-            "model": "llama-3.3-70b-versatile",
+            "model": GROQ_MODEL,
+            "reasoning_effort": "low",
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 2000,
+            "max_tokens": 3000,
             "temperature": 0.3
         }
 
@@ -317,9 +320,10 @@ def add_ai_summaries(news_list: List[Dict]) -> List[Dict]:
         }
 
         data = {
-            "model": "llama-3.3-70b-versatile",
+            "model": GROQ_MODEL,
+            "reasoning_effort": "low",
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 1000,
+            "max_tokens": 2000,
             "temperature": 0.3
         }
 
@@ -349,6 +353,10 @@ def add_ai_summaries(news_list: List[Dict]) -> List[Dict]:
             # 요약 적용
             for i, news in enumerate(needs_summary):
                 news["ai_summary"] = summaries.get(i, news.get("summary", "")[:50])
+        else:
+            print(f"❌ Groq API 오류: {response.status_code}")
+            print(response.text[:300])
+            return add_default_summaries(news_list)
 
         return news_list
 
